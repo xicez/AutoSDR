@@ -93,7 +93,7 @@ def make_window():
     # ----- Full layout -----
 
     layout = [[sg.Text('AutoSDR Toolkit', font='Any 20')],
-              [top_buttons],
+              [sg.Pane([top_buttons], orientation='h', relief=sg.RELIEF_SUNKEN, k='-UPPER PANE-')],
               [sg.Pane([sg.Column([[first_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[sec_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[third_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column(right_col, element_justification='c', expand_x=True, expand_y=True) ], orientation='h', relief=sg.RELIEF_SUNKEN, k='-PANE-')],
               [options_at_bottom, sg.Sizegrip()]]
 
@@ -106,6 +106,7 @@ def make_window():
     window['-DAIS LIST-'].expand(True, True, True)
     window[ML_KEY].expand(True, True, True)
     window['-PANE-'].expand(True, True, True)
+
 
     window.bind('<F1>', '-FOCUS FILTER-')
     window.bind('<F2>', '-FOCUS FIND-')
