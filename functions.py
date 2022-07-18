@@ -61,73 +61,16 @@ titles_to_connect_on = []
 max_calls_per_day = 100
 
 def leadDataRefresh():
-    lead_url = sheet_url.replace('/edit#gid=', '/export?format=csv&gid=')
-    leadData = pd.read_csv(lead_url)
-    return leadData
+    url = sheet_url.replace('/edit#gid=', '/export?format=csv&gid=')
+    return pd.read_csv(url)
 
+def contactDataRefresh():
+    url = sheet_url.replace('/edit#gid=0', '/export?format=csv&gid=1016929719')
+    return pd.read_csv(url)
 
-'''
-def dataRefresh():
+def daisDataRefresh():
+    url = sheet_url.replace('/edit#gid=0', '/export?format=csv&gid=917355881')
+    return pd.read_csv(url)
 
-	url_1 = sheet_url.replace('/edit#gid=', '/export?format=csv&gid=')
-	dais_url = sheet_url.replace('/edit#gid=0', '/export?format=csv&gid=917355881')
-
-
-	global leadData
-	global daisLeadData
-	leadData = pd.read_csv(url_1)
-	daisLeadData = pd.read_csv(dais_url)
-
-
-	global leadEmail
-	global leadCampaign
-	global daisLeadEmail
-	global daisLeadCampaign
-	global daisLeadTemplate
-	leadEmail = leadData['email']
-	leadCampaign = leadData['OutreachCampaign']
-	daisLeadEmail = daisLeadData['Email']
-	daisLeadCampaign = daisLeadData['OutreachCampaign']
-	daisLeadTemplate = daisLeadData['OutreachTemplate']
-
-	transfer_url = sheet_url.replace('/edit#gid=0', '/export?format=csv&gid=545159304')
-	sequence_url = sheet_url.replace('/edit#gid=0', '/export?format=csv&gid=1016929719')
-
-	global contactTransfer
-	global contactSequence
-	
-	try:
-		contactTransfer = pd.read_csv(transfer_url)
-		contactSequence = pd.read_csv(sequence_url)
-	except Exception as e: 
-		print(e)
-		print('Error connecting to gsheet- check your internet connection')
-
-
-	
-
-
-	global contactTransferList
-	
-	try:
-		contactTransferList = contactTransfer['Id'].values.tolist()
-		print(contactTransferList)
-
-	except Exception as e:
-		print(e)
-
-		
-	global numLeads
-	global numContactsSeq
-	
-	try:
-		numLeads = len(leadData['email'].values.tolist())
-		numContactsSeq = len(contactSequence['email'].values.tolist())
-
-		prospectCountText.set(f"Number of leads: {numLeads}\nNumber of contacts: {numContactsSeq}")
-
-	except Exception as e:
-		print(e)
-
-    return
-'''
+def startAutoDialer():
+	dialer.autodialer(outreach_username, outreach_password, max_calls_per_day)

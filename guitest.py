@@ -4,44 +4,93 @@ from tkinter import E
 import PySimpleGUI as sg
 import functions as fs
 import sys
+import time
+import threading
 
-def testfunc():
-    print('The test worked')
 
-sg.theme('DarkAmber')   # Add a touch of color
-# All the stuff inside your window.
-layout = [  [sg.Text('AutoSDR - Development Version v2.2.1', justification='center')],
-            [sg.Text('Number of Leads:'), sg.Text(size=(15,1), key='-LEADOUTPUT-'), sg.Text('Number of Contacts:'), sg.Text(size=(15,1), key='-CONTACTOUTPUT-')],
-            [sg.Text('Number of DAIS Leads:'), sg.Text(size=(15,1), key='-DAISLEADOUTPUT-'), sg.Text('Number of Partner Leads:'), sg.Text(size=(15,1), key='-PARTNEROUTPUT-')],
-            [sg.Text('Functions:')],
-            [sg.Button('Sequence Prospects'), sg.Button('Call Prospects'), sg.Button('Transfer Contacts'), sg.Button('Manual Data Refresh')],
-            [sg.Text('Under Development:')],
-            [sg.Button('[Coming Soon] Sequence Partner Leads'), sg.Button('[Coming Soon] Create Partner Opps'), sg.Button('[Coming Soon] Sequence DAIS Leads')] 
-        ]
-# Create the Window
-#window = sg.Window('AutoSDR v2.2.1 (Development Version)', layout)
+
+# --------------------------------- Define the Functions ---------------------------------
 
 def get_lead_list():
+
+    leadData = fs.leadDataRefresh()
+    leadList = leadData['email'].values.tolist()
+    print('Loading leads')
+
+    return leadData
+
+def get_contact_list():
+
+    contactData = fs.contactDataRefresh()
+    contactList = contactData['email'].values.tolist()
+    print('Loading contacts')
+
+    return contactData
+
+def get_dais_list():
+
+    daisData = fs.daisDataRefresh()
+    daisList = daisData['Email'].values.tolist()
+    print('Loading dais leads')
+
+    return daisData
+
+
+def refresh_all_data(window):
     """
-    Returns list of filenames of files to display
-    No path is shown, only the short filename
-    :return: List of filenames
-    :rtype: List[str]
+    A worker thread that communicates with the GUI through a queue
+    This thread can block for as long as it wants and the GUI will not be affected
     """
+    print('Starting thread - will refresh lead Queues')
 
-    ld = fs.leadDataRefresh()
-    leadList = ld['email'].values.tolist()
-    print(leadList)
-    return leadList
+    leadList = get_lead_list()['email'].values.tolist()
+    print(f'Lead Queue refreshed - Current number of leads is {len(leadList)}')
+
+    window['-LEAD LIST-'].update(leadList)
+    window['lenLeadList'].update(f'Number of Leads: {len(leadList)}')
+
+
+    contactList = get_contact_list()['email'].values.tolist()
+    print(f'Contact Queue refreshed - Current number of leads is {len(contactList)}')
+
+    window['-CONTACT LIST-'].update(contactList)
+    window['lenContactList'].update(f'Number of Contacts: {len(contactList)}')
+
+
+    daisList = get_dais_list()['Email'].values.tolist()
+    print(f'DAIS Queue refreshed - Current number of leads is {len(daisList)}')
+
+    window['-DAIS LIST-'].update(daisList)
+    window['lenDaisList'].update(f'Number of DAIS Leads: {len(daisList)}')
 
 
 
+def sequence_leads(leadList):
+    fs.sequence_leads(leadList, leadList['campaign'])
 
-ML_KEY = '-ML-'         # Multline's key
+
 
 
 # --------------------------------- Create the window ---------------------------------
-def make_window():
+def the_gui():
+
+    """
+
+    INITIALIZE VARIABLES
+
+    """
+    
+    leadList = []
+    contactList = []
+    daisList = []
+
+    print(len(leadList))
+    print(len(contactList))
+    print(len(daisList))
+
+    consoleLog = []
+    actionList = []
+
     """
     Creates the main window
     :return: The main window object
@@ -54,27 +103,35 @@ def make_window():
     filter_tooltip = "Filter files\nEnter a string in box to narrow down the list of files.\nFile list will update with list of files with string in filename."
     find_re_tooltip = "Find in file using Regular Expression\nEnter a string in box to search for string inside of the files.\nSearch is performed after clicking the FindRE button."
 
-    top_buttons = sg.pin(sg.Column([[sg.Button('Refresh'),sg.B('Sequence'), sg.B('Call'), sg.B('Coming Soon'), sg.B('Coming Soon')]]))
+    top_buttons = sg.pin(sg.Column([[sg.Button('Refresh', bind_return_key=True),sg.B('Sequence'), sg.B('Call'), sg.B('Transfer Contacts'), sg.B('Partner Opps - Coming Soon')]]))
 
     first_col = sg.Column([
         [sg.Text('Current Lead List:', tooltip=find_tooltip)],
-        [sg.Listbox(values=get_lead_list(), select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-LEAD LIST-')],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-LEAD LIST-')],
+        [sg.Text(f'Number of Leads: {len(leadList)}', tooltip=find_tooltip, k='lenLeadList')],
     ], element_justification='l', expand_x=True, expand_y=True)
 
     sec_col = sg.Column([
         [sg.Text('Current Contact List:', tooltip=find_tooltip)],
-        [sg.Listbox(values=get_lead_list(), select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-CONTACT LIST-')],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-CONTACT LIST-')],
+        [sg.Text(f'Number of Contacts: {len(contactList)}', tooltip=find_tooltip, k='lenContactList')],
     ], element_justification='l', expand_x=True, expand_y=True)
 
     third_col = sg.Column([
         [sg.Text('Current DAIS List:', tooltip=find_tooltip)],
-        [sg.Listbox(values=get_lead_list(), select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-DAIS LIST-')],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-DAIS LIST-')],
+        [sg.Text(f'Number of DAIS Leads: {len(daisList)}', tooltip=find_tooltip, k='lenDaisList')],
     ], element_justification='l', expand_x=True, expand_y=True)
 
 
     right_col = [
-        [sg.Multiline(size=(70, 21), write_only=True, key=ML_KEY, reroute_stdout=True, echo_stdout_stderr=True, reroute_cprint=True)],
-        [sg.B('Settings'), sg.Button('Exit')],
+        [sg.Text('Console Log:', tooltip=find_tooltip)],
+        [sg.Output(size=(70, 21), k='console')],
+
+        [sg.Text('Pending Actions:', tooltip=find_tooltip)],
+        [sg.Listbox(size=(70, 21), values=actionList, select_mode=sg.SELECT_MODE_EXTENDED, bind_return_key=True, key='-ACTION LIST-')],
+
+        [sg.B('Enable Autopilot'), sg.Button('Autopilot Settings')],
         [sg.T('AutoSDR v2.2.1 (Development)')],
         [sg.T('PySimpleGUI ver ' + sg.version.split(' ')[0] + '  tkinter ver ' + sg.tclversion_detailed, font='Default 8', pad=(0,0))],
         [sg.T('Python ver ' + sys.version, font='Default 8', pad=(0,0))],
@@ -104,53 +161,73 @@ def make_window():
     window['-LEAD LIST-'].expand(True, True, True)
     window['-CONTACT LIST-'].expand(True, True, True)
     window['-DAIS LIST-'].expand(True, True, True)
-    window[ML_KEY].expand(True, True, True)
     window['-PANE-'].expand(True, True, True)
+    window['-DAIS LIST-'].expand(True, True, True)
+    window['-ACTION LIST-'].expand(True, True, True)
+    window['console'].expand(True, True, True)
 
 
     window.bind('<F1>', '-FOCUS FILTER-')
     window.bind('<F2>', '-FOCUS FIND-')
     window.bind('<F3>', '-FOCUS RE FIND-')
 
-
-    # sg.cprint_set_output_destination(window, ML_KEY)
     window.bring_to_front()
-    return window
+
+
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED: 
+            break
+
+
+        if event == 'Refresh':
+            threading.Thread(target=refresh_all_data, args=(window,), daemon=True).start()
+            window.refresh()
+
+        elif event == 'Sequence Leads':
+            threading.Thread(target=sequence_leads, args=(), daemon=True).start()
+
+
+        elif event == 'Enable Autopilot':
+            
+            leadList = get_lead_list()
+            contactList = get_contact_list()
+            daisList = get_dais_list()
 
 
 
+            window['-LEAD LIST-'].update(leadList)
+
+            consoleLog.append('Updating Contact List')
+            window['-CONSOLE LOG-'].update('\n'.join('\n'.join(consoleLog)))
+            window.Refresh()
 
 
+            window['-CONTACT LIST-'].update(contactList)
+
+            consoleLog.append('Updating DAIS Lead List')
+            window['-CONSOLE LOG-'].update('\n'.join('\n'.join(consoleLog)))
+            window.Refresh()
 
 
+            window['-DAIS LIST-'].update(daisList)
+
+            window['-ACTION LIST-'].update('\n'.join(actionList[-3:]))
+
+            print('all lists have been updated- ready to start logic')
+
+            if len(leadList) > 0:
+                fs.leadSequence()
+        
+        elif event == 'Call':
+            fs.startAutoDialer()
+        
+        elif event == '-THREAD-':
+            print('Got a message back from the thread: ', values[event])
 
 
+    window.close()
 
-while True:
-    window = make_window()
-    event, values = window.read()
-    if event == sg.WIN_CLOSED: 
-        break
-    
-    if event == 'Sequence Prospects':
-        testfunc()
-
-    if event == 'Call Prospects':
-        testfunc()
-
-    if event == 'Transfer Contacts':
-        testfunc()
-
-    if event == 'Manual Data Refresh':
-        get_lead_list()
-
-    if event == '[Coming Soon] Sequence Partner Leads':
-        testfunc()
-
-    if event == '[Coming Soon] Create Partner Opps':
-        testfunc()
-
-    if event == '[Coming Soon] Sequence DAIS Leads':
-        testfunc()
-
-window.close()
+if __name__ == '__main__':
+    the_gui()
+    print('Exiting Program')
