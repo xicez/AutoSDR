@@ -7,67 +7,20 @@ import sys
 import time
 import threading
 
+# --------------------------------- TO-DO LIST ---------------------------------
+# FINISH ASSIGNING FUNCTIONS TO ALL BUTTONS
+# FIND A USE FOR THE SETTINGS CHECKBOXES
+# CREATE A POP-UP WINDOW FOR AUTOPILOT SETTINGS (ONCE YOU DEFINE SETTINGS)
+# MAKE A THEME WITH DATABRICKS COLORS
+
 
 
 # --------------------------------- Define the Functions ---------------------------------
 
-def get_lead_list():
+def autodial():
+    fs.startAutoDialer()
 
-    leadData = fs.leadDataRefresh()
-    leadList = leadData['email'].values.tolist()
-    print('Loading leads')
-
-    return leadData
-
-def get_contact_list():
-
-    contactData = fs.contactDataRefresh()
-    contactList = contactData['email'].values.tolist()
-    print('Loading contacts')
-
-    return contactData
-
-def get_dais_list():
-
-    daisData = fs.daisDataRefresh()
-    daisList = daisData['Email'].values.tolist()
-    print('Loading dais leads')
-
-    return daisData
-
-
-def refresh_all_data(window):
-    """
-    A worker thread that communicates with the GUI through a queue
-    This thread can block for as long as it wants and the GUI will not be affected
-    """
-    print('Starting thread - will refresh lead Queues')
-
-    leadList = get_lead_list()['email'].values.tolist()
-    print(f'Lead Queue refreshed - Current number of leads is {len(leadList)}')
-
-    window['-LEAD LIST-'].update(leadList)
-    window['lenLeadList'].update(f'Number of Leads: {len(leadList)}')
-
-
-    contactList = get_contact_list()['email'].values.tolist()
-    print(f'Contact Queue refreshed - Current number of leads is {len(contactList)}')
-
-    window['-CONTACT LIST-'].update(contactList)
-    window['lenContactList'].update(f'Number of Contacts: {len(contactList)}')
-
-
-    daisList = get_dais_list()['Email'].values.tolist()
-    print(f'DAIS Queue refreshed - Current number of leads is {len(daisList)}')
-
-    window['-DAIS LIST-'].update(daisList)
-    window['lenDaisList'].update(f'Number of DAIS Leads: {len(daisList)}')
-
-
-
-def sequence_leads(leadList):
-    fs.sequence_leads(leadList, leadList['campaign'])
-
+    fs.sequence_leads(email, campaign)
 
 
 
@@ -103,22 +56,36 @@ def the_gui():
     filter_tooltip = "Filter files\nEnter a string in box to narrow down the list of files.\nFile list will update with list of files with string in filename."
     find_re_tooltip = "Find in file using Regular Expression\nEnter a string in box to search for string inside of the files.\nSearch is performed after clicking the FindRE button."
 
-    top_buttons = sg.pin(sg.Column([[sg.Button('Refresh', bind_return_key=True),sg.B('Sequence'), sg.B('Call'), sg.B('Transfer Contacts'), sg.B('Partner Opps - Coming Soon')]]))
+    top_buttons = sg.pin(sg.Column([[sg.Button('Refresh All Data', bind_return_key=True), sg.B('Call Prospects'), sg.B('Unused Button'), sg.B('TEST')]]))
 
     first_col = sg.Column([
         [sg.Text('Current Lead List:', tooltip=find_tooltip)],
+        [sg.B('Refresh Leads', p=((10,0),(5,5))), sg.B('Sequence Leads')],
         [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-LEAD LIST-')],
         [sg.Text(f'Number of Leads: {len(leadList)}', tooltip=find_tooltip, k='lenLeadList')],
     ], element_justification='l', expand_x=True, expand_y=True)
 
     sec_col = sg.Column([
         [sg.Text('Current Contact List:', tooltip=find_tooltip)],
+        [sg.B('Refresh Contacts', p=((10,0),(5,5))), sg.B('Sequence Contacts')],
         [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-CONTACT LIST-')],
-        [sg.Text(f'Number of Contacts: {len(contactList)}', tooltip=find_tooltip, k='lenContactList')],
+        [sg.Text(f'Number of non-workable Contacts:', tooltip=find_tooltip, k='lenContactList')],
+        [sg.B('Transfer Contacts', p=((10,0),(5,5)))],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-CONTACT TRANSFER LIST-')],
+        [sg.Text(f'Number of non-workable Contacts: {len(contactList)}', tooltip=find_tooltip, k='lenContactTransferList')],
+    ], element_justification='l', expand_x=True, expand_y=True)
+
+    suspect_col = sg.Column([
+        [sg.Text('Current Suspect Lead List:', tooltip=find_tooltip)],
+        [sg.B('Refresh Suspect', p=((10,0),(5,5))), sg.B('Sequence Suspect')],
+
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-SUSPECT LIST-')],
+        [sg.Text(f'Number of Leads: {len(leadList)}', tooltip=find_tooltip, k='lenSuspectList')],
     ], element_justification='l', expand_x=True, expand_y=True)
 
     third_col = sg.Column([
         [sg.Text('Current DAIS List:', tooltip=find_tooltip)],
+        [sg.B('Refresh DAIS', p=((10,0),(5,5))), sg.B('Sequence DAIS')],
         [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-DAIS LIST-')],
         [sg.Text(f'Number of DAIS Leads: {len(daisList)}', tooltip=find_tooltip, k='lenDaisList')],
     ], element_justification='l', expand_x=True, expand_y=True)
@@ -127,12 +94,8 @@ def the_gui():
     right_col = [
         [sg.Text('Console Log:', tooltip=find_tooltip)],
         [sg.Output(size=(70, 21), k='console')],
-
-        [sg.Text('Pending Actions:', tooltip=find_tooltip)],
-        [sg.Listbox(size=(70, 21), values=actionList, select_mode=sg.SELECT_MODE_EXTENDED, bind_return_key=True, key='-ACTION LIST-')],
-
         [sg.B('Enable Autopilot'), sg.Button('Autopilot Settings')],
-        [sg.T('AutoSDR v2.2.1 (Development)')],
+        [sg.T('Sales Toolkit v2.3 (Development)')],
         [sg.T('PySimpleGUI ver ' + sg.version.split(' ')[0] + '  tkinter ver ' + sg.tclversion_detailed, font='Default 8', pad=(0,0))],
         [sg.T('Python ver ' + sys.version, font='Default 8', pad=(0,0))],
         [sg.T('Interpreter ' + sg.execute_py_get_interpreter(), font='Default 8', pad=(0,0))],
@@ -149,21 +112,22 @@ def the_gui():
     #                                  sg.Combo(sorted(sg.user_settings_get_entry('-folder names-', [])), default_value=sg.user_settings_get_entry('-demos folder-', ''), size=(50, 30), key='-FOLDERNAME-', enable_events=True, readonly=True)]], pad=(0,0), k='-FOLDER CHOOSE-'))
     # ----- Full layout -----
 
-    layout = [[sg.Text('AutoSDR Toolkit', font='Any 20')],
+    layout = [[sg.Text('Databricks Sales Toolkit', font='Any 20')],
               [sg.Pane([top_buttons], orientation='h', relief=sg.RELIEF_SUNKEN, k='-UPPER PANE-')],
-              [sg.Pane([sg.Column([[first_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[sec_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[third_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column(right_col, element_justification='c', expand_x=True, expand_y=True) ], orientation='h', relief=sg.RELIEF_SUNKEN, k='-PANE-')],
+              [sg.Pane([sg.Column([[first_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[sec_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[third_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[suspect_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column(right_col, element_justification='c', expand_x=True, expand_y=True) ], orientation='h', relief=sg.RELIEF_SUNKEN, k='-PANE-')],
               [options_at_bottom, sg.Sizegrip()]]
 
     # --------------------------------- Create Window ---------------------------------
-    window = sg.Window('AutoSDR v2.2.1 - Development Version', layout, finalize=True,  resizable=True, use_default_focus=False, right_click_menu=sg.MENU_RIGHT_CLICK_EDITME_VER_EXIT)
+    window = sg.Window('Sales Toolkit v2.3 - Development Version', layout, finalize=True,  resizable=True, use_default_focus=False, right_click_menu=sg.MENU_RIGHT_CLICK_EDITME_VER_EXIT)
     window.set_min_size(window.size)
 
     window['-LEAD LIST-'].expand(True, True, True)
     window['-CONTACT LIST-'].expand(True, True, True)
+    window['-CONTACT TRANSFER LIST-'].expand(True, True, True)
     window['-DAIS LIST-'].expand(True, True, True)
+    window['-SUSPECT LIST-'].expand(True, True, True)
     window['-PANE-'].expand(True, True, True)
     window['-DAIS LIST-'].expand(True, True, True)
-    window['-ACTION LIST-'].expand(True, True, True)
     window['console'].expand(True, True, True)
 
 
@@ -180,50 +144,50 @@ def the_gui():
             break
 
 
-        if event == 'Refresh':
-            threading.Thread(target=refresh_all_data, args=(window,), daemon=True).start()
-            window.refresh()
+        if event == 'Refresh All Data':
+            threading.Thread(target=fs.dbsql_refresh_all, args=(window,), daemon=True).start()
 
-        elif event == 'Sequence Leads':
-            threading.Thread(target=sequence_leads, args=(), daemon=True).start()
+        if event == 'Refresh Leads':
+            print('This button has not been assigned a function yet')
 
+        if event == 'Sequence Leads':
+            threading.Thread(target=fs.sequence_leads, args=(window,), daemon=True).start()
 
-        elif event == 'Enable Autopilot':
-            
-            leadList = get_lead_list()
-            contactList = get_contact_list()
-            daisList = get_dais_list()
+        if event == 'TEST':
+            threading.Thread(target=fs.testfunction, args=(window,), daemon=True).start()
 
-
-
-            window['-LEAD LIST-'].update(leadList)
-
-            consoleLog.append('Updating Contact List')
-            window['-CONSOLE LOG-'].update('\n'.join('\n'.join(consoleLog)))
-            window.Refresh()
-
-
-            window['-CONTACT LIST-'].update(contactList)
-
-            consoleLog.append('Updating DAIS Lead List')
-            window['-CONSOLE LOG-'].update('\n'.join('\n'.join(consoleLog)))
-            window.Refresh()
-
-
-            window['-DAIS LIST-'].update(daisList)
-
-            window['-ACTION LIST-'].update('\n'.join(actionList[-3:]))
-
-            print('all lists have been updated- ready to start logic')
-
-            if len(leadList) > 0:
-                fs.leadSequence()
+        if event == 'Call Prospects':
+            threading.Thread(target=autodial, args=(), daemon=True).start()
         
-        elif event == 'Call':
-            fs.startAutoDialer()
-        
-        elif event == '-THREAD-':
-            print('Got a message back from the thread: ', values[event])
+        if event == 'Refresh DAIS':
+            print('This button has not been assigned a function yet')
+
+        if event == 'Sequence DAIS':
+            print('This button has not been assigned a function yet')
+
+        if event == 'Refresh Contacts':
+            print('This button has not been assigned a function yet')
+
+        if event == 'Sequence Contacts':
+            print('This button has not been assigned a function yet')
+
+        if event == 'Transfer Contacts':
+            print('This button has not been assigned a function yet')
+
+        if event == 'Refresh Suspect':
+            print('This button has not been assigned a function yet')
+
+        if event == 'Sequence Suspect':
+            print('This button has not been assigned a function yet')
+
+        if event == 'Enable Autopilot':
+            print('This button has not been assigned a function yet')            
+
+        if event == 'Autopilot Settings':
+            print('This button has not been assigned a function yet')  
+
+        if event == 'Unused Button':
+            print('This button has not been assigned a function yet')  
 
 
     window.close()
