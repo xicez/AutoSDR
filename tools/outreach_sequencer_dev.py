@@ -173,7 +173,7 @@ def autoSequencer(email, password, prospectEmail, prospectCampaign, chromedriver
 
 				time.sleep(3)
 
-			except Exception as e:
+			except NoSuchElementException as e:
 				print(e)
 				continue
 
