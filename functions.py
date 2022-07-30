@@ -15,24 +15,18 @@ from tkinter import *
 
 import tkinter as tk
 
-'''
-TO DO:
-1. Hook up the rest of the buttons
-2. Debug the shit out of everything
-2.5. Setup multithreading 
-3. Set autodialer daily limits
-4. Integrate the contact transferer  
-5. Try REST API call to refresh databricks job for lead data
-6. Make the GUI prettier
-7. Build an auto-opp creator for partner submitted leads
-8. Build an auto-sequener for partner submitted leads (should be pretty easy- would require an update to databricks job)
-9. Run selenium headlessly 
-10. Integrate dependencies and try to package/compile for cross-compatability
-11. Maybe?? build a web app with UI/API and host on AWS
+
+# --------------------------------- TO-DO ---------------------------------
+# Debug the shit out of everything
+# Integrate the contact transferer  
+# Try REST API call to refresh databricks job for lead data
+# Build an auto-opp creator for partner submitted leads
+# Run selenium headlessly 
+# Integrate dependencies and try to package/compile for cross-compatability
 
 
-'''
-#### CONFIG ###
+
+# --------------------------------- CONFIGURATION ---------------------------------
 
 chromedriver_path = "/Users/nigel.silvadallenbach/Documents/GitHub/AutoSDR_dev/chromedriver"
 
@@ -92,7 +86,6 @@ def dbsql_leadrefresh(window):
 
     print('Initializing DB SQL Connection...')
     connection = dbsql_init()
-
     cursor = connection.cursor()
     
     print('Executing SQL Query...')

@@ -7,21 +7,12 @@ import sys
 import time
 import threading
 
+
 # --------------------------------- TO-DO LIST ---------------------------------
 # FINISH ASSIGNING FUNCTIONS TO ALL BUTTONS
 # FIND A USE FOR THE SETTINGS CHECKBOXES
 # CREATE A POP-UP WINDOW FOR AUTOPILOT SETTINGS (ONCE YOU DEFINE SETTINGS)
 # MAKE A THEME WITH DATABRICKS COLORS
-
-
-
-# --------------------------------- Define the Functions ---------------------------------
-
-def autodial():
-    fs.startAutoDialer()
-
-    fs.sequence_leads(email, campaign)
-
 
 
 # --------------------------------- Create the window ---------------------------------
@@ -49,51 +40,64 @@ def the_gui():
     :return: The main window object
     :rtype: (sg.Window)
     """
+
     sg.theme('DarkAmber')
+
+    sg.theme_button_color(color = 'white')
+    sg.theme_text_color(color = '#333333')
+    sg.theme_input_background_color(color = 'white')
+    sg.theme_text_element_background_color(color = 'white')
+    sg.theme_element_text_color(color = '#13262e')
+    sg.theme_input_text_color(color = '#13262e')
+
+    right_click_email = [['Open in Outreach'], ['Delete']]
+
+
     # First the window layout...2 columns
 
     find_tooltip = "Find in file\nEnter a string in box to search for string inside of the files.\nFile list will update with list of files string found inside."
     filter_tooltip = "Filter files\nEnter a string in box to narrow down the list of files.\nFile list will update with list of files with string in filename."
     find_re_tooltip = "Find in file using Regular Expression\nEnter a string in box to search for string inside of the files.\nSearch is performed after clicking the FindRE button."
 
-    top_buttons = sg.pin(sg.Column([[sg.Button('Refresh All Data', bind_return_key=True), sg.B('Call Prospects'), sg.B('Unused Button'), sg.B('TEST')]]))
+    # ----- Home Page Layout Elements -----
 
-    first_col = sg.Column([
-        [sg.Text('Current Lead List:', tooltip=find_tooltip)],
+    sidebar = [
+        [sg.Image(source='./img/logo.png', background_color='#13262e')],
+        [sg.B('Control Panel',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))],
+        [sg.B('Partner Tools',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))], 
+        [sg.B('Calling Tools',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))], 
+        [sg.B('Debugging View',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))],
+
+        [sg.HorizontalSeparator(color = '#acbabf', pad = ((15,15),(400,5)), k = None)],
+        [sg.Button('Refresh All Data', bind_return_key=True,expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))],
+        ]
+
+    home_first_col = [
+        [sg.Text('Current Lead List:', tooltip=find_tooltip, background_color='#ffffff')],
         [sg.B('Refresh Leads', p=((10,0),(5,5))), sg.B('Sequence Leads')],
-        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-LEAD LIST-')],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-LEAD LIST-', background_color='#f7f7f7', no_scrollbar=True, right_click_menu=right_click_email)],
         [sg.Text(f'Number of Leads: {len(leadList)}', tooltip=find_tooltip, k='lenLeadList')],
-    ], element_justification='l', expand_x=True, expand_y=True)
-
-    sec_col = sg.Column([
         [sg.Text('Current Contact List:', tooltip=find_tooltip)],
-        [sg.B('Refresh Contacts', p=((10,0),(5,5))), sg.B('Sequence Contacts')],
-        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-CONTACT LIST-')],
-        [sg.Text(f'Number of non-workable Contacts:', tooltip=find_tooltip, k='lenContactList')],
-        [sg.B('Transfer Contacts', p=((10,0),(5,5)))],
-        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-CONTACT TRANSFER LIST-')],
-        [sg.Text(f'Number of non-workable Contacts: {len(contactList)}', tooltip=find_tooltip, k='lenContactTransferList')],
-    ], element_justification='l', expand_x=True, expand_y=True)
+        [sg.B('Refresh Contacts', p=((10,0),(5,5))), sg.B('Sequence Contacts'), sg.B('Transfer Non-Workable')],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-CONTACT LIST-', background_color='#f7f7f7', no_scrollbar=True)],
+        [sg.Text(f'Number of workable Contacts:', tooltip=find_tooltip, k='lenContactList')],
+    ]
 
-    suspect_col = sg.Column([
-        [sg.Text('Current Suspect Lead List:', tooltip=find_tooltip)],
-        [sg.B('Refresh Suspect', p=((10,0),(5,5))), sg.B('Sequence Suspect')],
-
-        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-SUSPECT LIST-')],
-        [sg.Text(f'Number of Leads: {len(leadList)}', tooltip=find_tooltip, k='lenSuspectList')],
-    ], element_justification='l', expand_x=True, expand_y=True)
-
-    third_col = sg.Column([
+    home_sec_col = [
         [sg.Text('Current DAIS List:', tooltip=find_tooltip)],
         [sg.B('Refresh DAIS', p=((10,0),(5,5))), sg.B('Sequence DAIS')],
-        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-DAIS LIST-')],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-DAIS LIST-', background_color='#f7f7f7', no_scrollbar=True)],
         [sg.Text(f'Number of DAIS Leads: {len(daisList)}', tooltip=find_tooltip, k='lenDaisList')],
-    ], element_justification='l', expand_x=True, expand_y=True)
+        [sg.Text('Open Partner Leads:', tooltip=find_tooltip)],
+        [sg.B('Refresh Partners', p=((10,0),(5,5)))],
+        [sg.Listbox(values='', select_mode=sg.SELECT_MODE_EXTENDED, size=(50,20), bind_return_key=True, key='-PARTNER LIST-', background_color='#f7f7f7', no_scrollbar=True)],
+        [sg.Text(f'Number of Partner Leads: {len(daisList)}', tooltip=find_tooltip, k='lenDaisList')],
+    ] 
 
 
-    right_col = [
+    home_third_col = [
         [sg.Text('Console Log:', tooltip=find_tooltip)],
-        [sg.Output(size=(70, 21), k='console')],
+        [sg.Output(size=(70, 21), k='console', background_color='#f7f7f7')],
         [sg.B('Enable Autopilot'), sg.Button('Autopilot Settings')],
         [sg.T('Sales Toolkit v2.3 (Development)')],
         [sg.T('PySimpleGUI ver ' + sg.version.split(' ')[0] + '  tkinter ver ' + sg.tclversion_detailed, font='Default 8', pad=(0,0))],
@@ -101,34 +105,91 @@ def the_gui():
         [sg.T('Interpreter ' + sg.execute_py_get_interpreter(), font='Default 8', pad=(0,0))],
     ]
 
-    options_at_bottom = sg.pin(sg.Column([[sg.CB('Setting 1', enable_events=True, k='-VERBOSE-', tooltip='Enable to see the matches in the right hand column'),
-                         sg.CB('Another setting', default=True, enable_events=True, k='-FIRST MATCH ONLY-', tooltip='Disable to see ALL matches found in files'),
-                         sg.CB('Yet another setting', default=True, enable_events=True, k='-IGNORE CASE-'),
-                         sg.CB('I love checkboxes', default=False, enable_events=True, k='-WAIT-')
-                                           ]],
-                                         pad=(0,0), k='-OPTIONS BOTTOM-',  expand_x=True, expand_y=False),  expand_x=True, expand_y=False)
 
-    #choose_folder_at_top = sg.pin(sg.Column([[sg.T('Click settings to set top of your tree or choose a previously chosen folder'),
-    #                                  sg.Combo(sorted(sg.user_settings_get_entry('-folder names-', [])), default_value=sg.user_settings_get_entry('-demos folder-', ''), size=(50, 30), key='-FOLDERNAME-', enable_events=True, readonly=True)]], pad=(0,0), k='-FOLDER CHOOSE-'))
-    # ----- Full layout -----
+    options_at_bottom = sg.pin(sg.Column([[sg.CB('Setting 1', enable_events=True, k='-VERBOSE-', tooltip='Enable to see the matches in the right hand column', background_color='#13262e', text_color='white'),
+                         sg.CB('Another setting', default=True, enable_events=True, k='-FIRST MATCH ONLY-', tooltip='Disable to see ALL matches found in files', background_color='#13262e', text_color='white'),
+                         sg.CB('Yet another setting', default=True, enable_events=True, k='-IGNORE CASE-', background_color='#13262e', text_color='white'),
+                         sg.CB('I love checkboxes', default=False, enable_events=True, k='-WAIT-', background_color='#13262e', text_color='white')
+                        ]], pad=(0,0), k='-OPTIONS BOTTOM-',  expand_x=True, expand_y=False, background_color='#13262e'),  expand_x=True, expand_y=False)
 
-    layout = [[sg.Text('Databricks Sales Toolkit', font='Any 20')],
-              [sg.Pane([top_buttons], orientation='h', relief=sg.RELIEF_SUNKEN, k='-UPPER PANE-')],
-              [sg.Pane([sg.Column([[first_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[sec_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[third_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column([[suspect_col]], element_justification='l',  expand_x=True, expand_y=True), sg.Column(right_col, element_justification='c', expand_x=True, expand_y=True) ], orientation='h', relief=sg.RELIEF_SUNKEN, k='-PANE-')],
-              [options_at_bottom, sg.Sizegrip()]]
+    # ----- Debugging Window Elements -----
+
+    debugging_pane1 = [
+                [sg.Text('Auto Sequencer:', tooltip=find_tooltip)], # Need to update tooltip 
+                [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+    ]
+
+    debugging_pane2 = [
+                [sg.Text('Auto Dialer:', tooltip=find_tooltip)], # Need to update tooltip 
+                [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+    ]
+
+    debugging_pane3 = [
+                [sg.Text('Auto Contact Transfer:', tooltip=find_tooltip)], # Need to update tooltip 
+                [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+    ]
+
+    debugging_pane4 = [
+                [sg.Text('Auto Contact Transfer:', tooltip=find_tooltip)], # Need to update tooltip 
+                [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+    ]
+
+
+    # ----- LAYOUTS -----
+
+
+
+
+    # ----- Home Page Window Layout -----
+
+    home_col1 = sg.Column(home_first_col, element_justification='l',  expand_x=True, expand_y=True, background_color='#ffffff', pad=0, k='-home_col1-')
+    home_col2 = sg.Column(home_sec_col, element_justification='l',  expand_x=True, expand_y=True, background_color='#ffffff', k='-home_col2-')
+    home_col3 = sg.Column(home_third_col, element_justification='l',  expand_x=True, expand_y=True, background_color='#ffffff', k='-home_col3-')
+
+    # ----- Debug Page Window Layout -----
+
+    debug_col1 = sg.Column(debugging_pane1, element_justification='c',  expand_x=True, expand_y=True, visible=False, background_color='#ffffff', k='-debug_col1-')
+    debug_col2 = sg.Column(debugging_pane2, element_justification='c',  expand_x=True, expand_y=True, visible=False, background_color='#ffffff', k='-debug_col2-')
+    debug_col3 = sg.Column(debugging_pane3, element_justification='c',  expand_x=True, expand_y=True, visible=False, background_color='#ffffff', k='-debug_col3-')
+    debug_col4 = sg.Column(debugging_pane4, element_justification='c',  expand_x=True, expand_y=True, visible=False, background_color='#ffffff', k='-debug_col4-')
+
+
+    # ----- Full Window Layout -----
+
+    layout = [
+                [sg.Column(sidebar, element_justification='l', expand_y=True, expand_x=False, background_color='#13262e', k='sidebar', pad=(0,0)),
+                    sg.Pane(
+                        [
+
+                            # -- HOME PAGE --
+                            home_col1,
+                            home_col2,
+                            home_col3,
+                            # -- DEBUG PAGE -- 
+                            debug_col1, 
+                            debug_col2,
+                            debug_col3,
+                            debug_col4,
+
+                        ], orientation='h', relief=sg.RELIEF_SUNKEN, k='-PANE-', background_color='#ffffff' ,pad=0)
+                ],
+                [options_at_bottom, sg.Sizegrip(background_color = '#13262e')]
+            ]
 
     # --------------------------------- Create Window ---------------------------------
-    window = sg.Window('Sales Toolkit v2.3 - Development Version', layout, finalize=True,  resizable=True, use_default_focus=False, right_click_menu=sg.MENU_RIGHT_CLICK_EDITME_VER_EXIT)
+    window = sg.Window('Sales Toolkit v2.3 - Development Version', layout, finalize=True,  resizable=True, use_default_focus=False, right_click_menu=sg.MENU_RIGHT_CLICK_EDITME_VER_EXIT, margins=(0,0), background_color='white')
     window.set_min_size(window.size)
+
 
     window['-LEAD LIST-'].expand(True, True, True)
     window['-CONTACT LIST-'].expand(True, True, True)
-    window['-CONTACT TRANSFER LIST-'].expand(True, True, True)
     window['-DAIS LIST-'].expand(True, True, True)
-    window['-SUSPECT LIST-'].expand(True, True, True)
     window['-PANE-'].expand(True, True, True)
     window['-DAIS LIST-'].expand(True, True, True)
     window['console'].expand(True, True, True)
+    window['-PARTNER LIST-'].expand(True, True, True)
+    window['sidebar'].expand(expand_x=False, expand_y=True)
+
 
 
     window.bind('<F1>', '-FOCUS FILTER-')
@@ -136,6 +197,10 @@ def the_gui():
     window.bind('<F3>', '-FOCUS RE FIND-')
 
     window.bring_to_front()
+
+
+
+    # ----- Event Listener -----
 
 
     while True:
@@ -153,11 +218,51 @@ def the_gui():
         if event == 'Sequence Leads':
             threading.Thread(target=fs.sequence_leads, args=(window,), daemon=True).start()
 
-        if event == 'TEST':
-            threading.Thread(target=fs.testfunction, args=(window,), daemon=True).start()
+# TODO: Create a helper function to eliminate all this copy/paste bullshit 
+
+        if event == 'Debugging View':
+            window['-home_col1-'].update(visible=False)
+            window['-home_col2-'].update(visible=False)
+            window['-home_col3-'].update(visible=False)
+
+            window['-debug_col1-'].update(visible=True)
+            window['-debug_col2-'].update(visible=True)
+            window['-debug_col3-'].update(visible=True)
+            window['-debug_col4-'].update(visible=True)
+        
+
+        if event == 'Control Panel':
+            window['-home_col1-'].update(visible=True)
+            window['-home_col2-'].update(visible=True)
+            window['-home_col3-'].update(visible=True)
+
+            window['-debug_col1-'].update(visible=False)
+            window['-debug_col2-'].update(visible=False)
+            window['-debug_col3-'].update(visible=False)
+            window['-debug_col4-'].update(visible=False)
+
+        if event == 'Calling Tools':
+            window['-home_col1-'].update(visible=False)
+            window['-home_col2-'].update(visible=False)
+            window['-home_col3-'].update(visible=False)
+
+            window['-debug_col1-'].update(visible=False)
+            window['-debug_col2-'].update(visible=False)
+            window['-debug_col3-'].update(visible=False)
+            window['-debug_col4-'].update(visible=False)
+
+        if event == 'Partner Tools':
+            window['-home_col1-'].update(visible=False)
+            window['-home_col2-'].update(visible=False)
+            window['-home_col3-'].update(visible=False)
+
+            window['-debug_col1-'].update(visible=False)
+            window['-debug_col2-'].update(visible=False)
+            window['-debug_col3-'].update(visible=False)
+            window['-debug_col4-'].update(visible=False)
 
         if event == 'Call Prospects':
-            threading.Thread(target=autodial, args=(), daemon=True).start()
+            threading.Thread(target=fs.startAutoDialer, args=(), daemon=True).start()
         
         if event == 'Refresh DAIS':
             print('This button has not been assigned a function yet')
@@ -193,5 +298,5 @@ def the_gui():
     window.close()
 
 if __name__ == '__main__':
-    the_gui()
     print('Exiting Program')
+    the_gui()

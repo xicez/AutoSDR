@@ -1,6 +1,5 @@
 # TO-DO:
 # - SET UP EMAIL/TEXT ALERTS WHEN THE RUN FAILS
-# - LOAD LOG DATA BACK INTO GSHEET, CREATE A DELTA TABLE LOG AND JOB TO CROSS-CHECK FOR CORRECTNESS
 # - FIX NIGEL - BUSY ISSUE
 # - TURN INTO MODULE AND BUILD A CONTROL FILE TO MANAGE TIME AND TASKS
 
@@ -78,35 +77,54 @@ def autoSequencer(email, password, prospectEmail, prospectCampaign, chromedriver
 
 			#Search for the prospects email address in Outreach 
 			
-			search_button = driver.find_element(By.XPATH, "//i[@class='_3XP4tseTH1-F62Cg-zWwDx _2fZKQSDZC30Tb9NpVwNcBc _13bB5RjyTUrFyaxtvHghsD']")
-			search_button.click()
-
-			search_input = driver.find_element(By.XPATH, "//input[@placeholder='Search']")
-			search_input.send_keys(lead)
-			ActionChains(driver).move_to_element(search_input).key_down(Keys.RETURN).key_up(Keys.RETURN).perform()
+			try:
+				search_button = driver.find_element(By.XPATH, "//i[@class='_3XP4tseTH1-F62Cg-zWwDx _2fZKQSDZC30Tb9NpVwNcBc _13bB5RjyTUrFyaxtvHghsD']")
+				search_button.click()
+			except NoSuchElementException as e: 
+				print(e)
+				continue 
 
 			try:
-				prospect_name = driver.find_element(By.XPATH, "//div[@class='_3H5qkVK0pC9Dnnch1YhgKI']")
-				ActionChains(driver).move_to_element(prospect_name).click().perform()
-				sequence_button = driver.find_element(By.XPATH, "//button[@class='sequence icon-button _1ylTesnUFCUoPnsDHUtF0P _2bFSp1_3O05dzYHWllrXO0 IEU0ZeP2iAN3PQHapRWyS _1R80yfDPFuM38JpsKWXGAb _2cnlnJABAd45c0XvaZNlQY']")
+				search_input = driver.find_element(By.XPATH, "//input[@placeholder='Search']")
+				search_input.send_keys(lead)
+				ActionChains(driver).move_to_element(search_input).key_down(Keys.RETURN).key_up(Keys.RETURN).perform()
+				time.sleep(1)
+			except NoSuchElementException as e:
+				print(e)
+				continue
+
+			try:
+				iframe_outreach = driver.find_element(By.XPATH, "//iframe[contains(@title,'Outreach')]")
+				driver.switch_to.frame(iframe_outreach)
+
+				prospect_name = driver.find_element(By.XPATH, "//input[@aria-label='Select row']")
+				prospect_name.click()
+			except NoSuchElementException as e:
+				print(e)
+				print('Unable to locate prospect, continuing')
+				time.sleep(100)
+
+			try:
+				sequence_button = driver.find_element(By.XPATH, "//span[text()='Sequence']")
 				sequence_button.click()
 
-				time.sleep(3)
+				time.sleep(0.5)
 			except NoSuchElementException as e:
-				print('Unable to locate prospect, continuing')
+				print(e)
 				continue
 
 			
 
 			try:	
 				#iframe switch for modal popup:
+				driver.switch_to.default_content()
 				iframe_modal = driver.find_element(By.XPATH, "//iframe[contains(@title,'Outreach modal')]")
 				driver.switch_to.frame(iframe_modal)
 
 				time.sleep(3)
 			except Exception as e:
 				print(e)
-				continue
+				print('There was an error switching to the modal iframe.')
 
 			try:	
 				sequenceFilter = driver.find_element(By.XPATH, "//input[@aria-label='Filter sequences']")
