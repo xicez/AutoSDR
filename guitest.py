@@ -6,6 +6,8 @@ import functions as fs
 import sys
 import time
 import threading
+import os
+import psutil
 
 
 # --------------------------------- TO-DO LIST ---------------------------------
@@ -14,6 +16,10 @@ import threading
 # CREATE A POP-UP WINDOW FOR AUTOPILOT SETTINGS (ONCE YOU DEFINE SETTINGS)
 # MAKE A THEME WITH DATABRICKS COLORS
 
+
+# Pre-styled table element: 
+
+#[sg.Table([['test','test2','test3'],['test4','test5','test6']], headings=['hdr1','hdr2','hdr3'], background_color='#f7f7f7', header_background_color='#f7f7f7', auto_size_columns=False, hide_vertical_scroll=True, def_col_width=22, header_text_color='#13262e',  k='cp-table')],
 
 # --------------------------------- Create the window ---------------------------------
 def the_gui():
@@ -67,8 +73,10 @@ def the_gui():
         [sg.B('Partner Tools',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))], 
         [sg.B('Calling Tools',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))], 
         [sg.B('Debugging View',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))],
+        [sg.B('Call Prospects',  p=0, expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))],
 
-        [sg.HorizontalSeparator(color = '#acbabf', pad = ((15,15),(400,5)), k = None)],
+
+        [sg.HorizontalSeparator(color = '#acbabf', pad = ((15,15),(380,5)), k = None)],
         [sg.Button('Refresh All Data', bind_return_key=True,expand_x=True, size=(20,1.5), border_width=0, mouseover_colors=('white','#203742'), button_color=('#acbabf','#13262e'))],
         ]
 
@@ -94,12 +102,20 @@ def the_gui():
         [sg.Text(f'Number of Partner Leads: {len(daisList)}', tooltip=find_tooltip, k='lenDaisList')],
     ] 
 
+    home_metrics_kpis = [
+        sg.Text("\n\n 100 \n Weekly Calls", relief=sg.RELIEF_SOLID, border_width=1, size=(10, 6), justification='center', font=('Helvitica', 12, 'bold'), k='weekly-calls'),
+        sg.Text("\n\n 100 \n Weekly Connects", relief=sg.RELIEF_SOLID, border_width=1, size=(10, 6), justification='center', font=('Helvitica', 12, 'bold'), k='weekly-calls'),
+        sg.Text("\n\n 100 \n Open Prospects", relief=sg.RELIEF_SOLID, border_width=1, size=(10, 6), justification='center', font=('Helvitica', 12, 'bold'), k='weekly-calls'),
+        sg.Text("\n\n 100 \n Open Partners", relief=sg.RELIEF_SOLID, border_width=1, size=(10, 6), justification='center', font=('Helvitica', 12, 'bold'), k='weekly-calls'),
+
+    ]
 
     home_third_col = [
+        home_metrics_kpis,
         [sg.Text('Console Log:', tooltip=find_tooltip)],
         [sg.Output(size=(70, 21), k='console', background_color='#f7f7f7')],
         [sg.B('Enable Autopilot'), sg.Button('Autopilot Settings')],
-        [sg.T('Sales Toolkit v2.3 (Development)')],
+        [sg.T('Sales Toolkit v3.0 (Development)')],
         [sg.T('PySimpleGUI ver ' + sg.version.split(' ')[0] + '  tkinter ver ' + sg.tclversion_detailed, font='Default 8', pad=(0,0))],
         [sg.T('Python ver ' + sys.version, font='Default 8', pad=(0,0))],
         [sg.T('Interpreter ' + sg.execute_py_get_interpreter(), font='Default 8', pad=(0,0))],
@@ -117,21 +133,29 @@ def the_gui():
     debugging_pane1 = [
                 [sg.Text('Auto Sequencer:', tooltip=find_tooltip)], # Need to update tooltip 
                 [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+                [sg.Text('Current Status:', tooltip=find_tooltip)], # Need to update tooltip
+                [sg.Multiline(default_text='Not Active', expand_x=True, expand_y=True, k='debug-ml-1')], 
     ]
 
     debugging_pane2 = [
                 [sg.Text('Auto Dialer:', tooltip=find_tooltip)], # Need to update tooltip 
-                [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+                [sg.Image(source='./autodialer_latest.png', background_color='white', size=(250,250), k='-autodial_screen-')],
+                [sg.Text('Current Status:', tooltip=find_tooltip)], # Need to update tooltip
+                [sg.Multiline(default_text='Not Active', expand_x=True, expand_y=True, k='debug-ml-2')], 
     ]
 
     debugging_pane3 = [
                 [sg.Text('Auto Contact Transfer:', tooltip=find_tooltip)], # Need to update tooltip 
                 [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+                [sg.Text('Current Status:', tooltip=find_tooltip)], # Need to update tooltip
+                [sg.Multiline(default_text='Not Active', expand_x=True, expand_y=True, k='debug-ml-3')],
     ]
 
     debugging_pane4 = [
                 [sg.Text('Auto Contact Transfer:', tooltip=find_tooltip)], # Need to update tooltip 
                 [sg.Image(source='./img/test.png', background_color='white', size=(250,250))],
+                [sg.Text('Current Status:', tooltip=find_tooltip)], # Need to update tooltip
+                [sg.Multiline(default_text='Not Active', expand_x=True, expand_y=True, k='debug-ml-4')],
     ]
 
 
@@ -144,7 +168,7 @@ def the_gui():
 
     home_col1 = sg.Column(home_first_col, element_justification='l',  expand_x=True, expand_y=True, background_color='#ffffff', pad=0, k='-home_col1-')
     home_col2 = sg.Column(home_sec_col, element_justification='l',  expand_x=True, expand_y=True, background_color='#ffffff', k='-home_col2-')
-    home_col3 = sg.Column(home_third_col, element_justification='l',  expand_x=True, expand_y=True, background_color='#ffffff', k='-home_col3-')
+    home_col3 = sg.Column(home_third_col, element_justification='c',  expand_x=True, expand_y=True, background_color='#ffffff', k='-home_col3-')
 
     # ----- Debug Page Window Layout -----
 
@@ -189,6 +213,12 @@ def the_gui():
     window['console'].expand(True, True, True)
     window['-PARTNER LIST-'].expand(True, True, True)
     window['sidebar'].expand(expand_x=False, expand_y=True)
+    window['debug-ml-1'].expand(True, True, True)    
+    window['debug-ml-2'].expand(True, True, True)
+    window['debug-ml-3'].expand(True, True, True)
+    window['debug-ml-4'].expand(True, True, True)
+    
+    window['weekly-calls'].expand(False, False)
 
 
 
@@ -229,8 +259,7 @@ def the_gui():
             window['-debug_col2-'].update(visible=True)
             window['-debug_col3-'].update(visible=True)
             window['-debug_col4-'].update(visible=True)
-        
-
+                
         if event == 'Control Panel':
             window['-home_col1-'].update(visible=True)
             window['-home_col2-'].update(visible=True)
@@ -250,7 +279,7 @@ def the_gui():
             window['-debug_col2-'].update(visible=False)
             window['-debug_col3-'].update(visible=False)
             window['-debug_col4-'].update(visible=False)
-
+            
         if event == 'Partner Tools':
             window['-home_col1-'].update(visible=False)
             window['-home_col2-'].update(visible=False)
@@ -276,27 +305,8 @@ def the_gui():
         if event == 'Sequence Contacts':
             print('This button has not been assigned a function yet')
 
-        if event == 'Transfer Contacts':
-            print('This button has not been assigned a function yet')
-
-        if event == 'Refresh Suspect':
-            print('This button has not been assigned a function yet')
-
-        if event == 'Sequence Suspect':
-            print('This button has not been assigned a function yet')
-
-        if event == 'Enable Autopilot':
-            print('This button has not been assigned a function yet')            
-
-        if event == 'Autopilot Settings':
-            print('This button has not been assigned a function yet')  
-
-        if event == 'Unused Button':
-            print('This button has not been assigned a function yet')  
-
 
     window.close()
 
 if __name__ == '__main__':
-    print('Exiting Program')
     the_gui()

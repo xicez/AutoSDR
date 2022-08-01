@@ -21,6 +21,11 @@ import pandas as pd
 delay = 0
 time_left = 60
 
+def take_screenshot(driver):
+	print('Taking Screenshot')
+	driver.get_screenshot_as_file("autodialer_latest.png")
+
+
 
 def autodialer(email, password, max_calls_hour):
 	i = 0
@@ -48,6 +53,7 @@ def autodialer(email, password, max_calls_hour):
 		print('Webdriver launched')
 
 		#Log in to Outreach
+		take_screenshot(driver)
 		email_input = driver.find_element(By.XPATH, '//input[@id="user_email"]')
 		email_input.send_keys(email)
 		ActionChains(driver).move_to_element(email_input).key_down(Keys.RETURN).key_up(Keys.RETURN).perform()
@@ -65,6 +71,7 @@ def autodialer(email, password, max_calls_hour):
 
 		while True: 
 
+			take_screenshot(driver)
 			print('Starting loop')
 			time.sleep(1)
 			prospectTitle = driver.find_element(By.XPATH, "//p[@class='_1FT0XN4xrzF8j9wPq1IqDO _3u0Wl3UJGUK9nrLY-1xojN _2XsPmEmzO0oSdPWsbZQeSO']")
@@ -74,12 +81,13 @@ def autodialer(email, password, max_calls_hour):
 
 		#check if a number exists, if not skip the task
 			try:
-			
+				take_screenshot(driver)
 				print('Calling prospect')
 				callButton = driver.find_element(By.XPATH, "//i[@class='_3IgMsURK-3b6bjwARPmD2_ _3XP4tseTH1-F62Cg-zWwDx Z8ma2hjVe2tPmJQ3Ppmmi _13bB5RjyTUrFyaxtvHghsD']")
 				callButton.click()
 
-			except NoSuchElementException:	
+			except NoSuchElementException:
+				take_screenshot(driver)	
 				s = s + 1
 				print(f'Skipping Call | Total Skipped: {s}')
 				nextTask = driver.find_element(By.XPATH, "//button[@class='caret-dropdown-button _1ylTesnUFCUoPnsDHUtF0P _22hSpbFmuiQ8R9QbO4ZqTX _1Ay9MEQX3iXqrw2cxxIbzo _1gXXlmROaFHLoEi6CKsXd6 _6HZaoxWJnRcfE95dytvs_ dropdown-button _10WN_uTvYhxSNagSvGB4n8']//i[@class='_3ExX8qM26_trEsvweUZWmM _3XP4tseTH1-F62Cg-zWwDx _1-DCZzScVz9s0VMOIYyDg2 _13bB5RjyTUrFyaxtvHghsD']")
@@ -100,7 +108,7 @@ def autodialer(email, password, max_calls_hour):
 			#iframe switch for modal popup:
 			dialerFrame = driver.find_element(By.XPATH, "//iframe[contains(@title,'Outreach dialer')]")
 			driver.switch_to.frame(dialerFrame)
-
+			take_screenshot(driver)
 			try:
 				print('Checking for bad number')
 				callAnyway = driver.find_element(By.XPATH, "//button[@aria-label='Call anyway']")
@@ -159,7 +167,7 @@ def autodialer(email, password, max_calls_hour):
 
 			i += 1
 			print(f'Logged Call | Total Calls: {i}')
-
+			take_screenshot(driver)
 			logCall = driver.find_element(By.XPATH, "//span[contains(text(),'Log Call & Complete')]")
 			logCall.click()
 			time.sleep(0.75)
