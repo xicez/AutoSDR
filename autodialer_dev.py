@@ -9,6 +9,9 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support.color import Color
+from selenium.webdriver.support.ui import Select
+import re
+
 
 
 # OTHER IMPORTS
@@ -38,7 +41,7 @@ def autodialer(email, password, max_calls_hour):
 			#chrome_options.add_argument("--use-fake-ui-for-media-stream")
 			chrome_options.add_argument("user-data-dir=//Applications/tmp/Google Chrome Dev"); # 
 		
-			driver = webdriver.Chrome(chrome_options=chrome_options, executable_path="/Users/hosea.kidane/Downloads/AutoSDR-main/chromedriver")
+			driver = webdriver.Chrome(chrome_options=chrome_options, executable_path="/Users/hosea.kidane/Downloads/AutoSDR-mainv1/chromedriver")
 
 			driver.get('https://app1a.outreach.io/360')
 
@@ -78,23 +81,25 @@ def autodialer(email, password, max_calls_hour):
 			# splitting title in list for double call feature later
 			titlestring = prospectTitle.text.lower()
 			titlelist = titlestring.split(" ")
-			print(titlestring)
-			print(titlelist)
+			
 
 			badNum = False
-		# skip bad numbers
-			
+		# skip bad numbers by color 
+			time.sleep(.5)
 			try:
 
 				callcolorelement = driver.find_element(By.XPATH, "//*[@id='task-flow-log-call-form']/div[3]/div/div/div/div[1]/div/label/div[2]/div/div/div/button")
 				callcolor = callcolorelement.value_of_css_property("background-color")
-				print(callcolor)
 				hexcolor = Color.from_string(callcolor).hex
 				print(hexcolor)
 			
 			
-				if hexcolor == ('#eb7800') or ('#c13614'):
-					print('Bad number skipping - call')
+				if hexcolor == "#ffffff":
+					print("call color white - continuing")
+					pass
+
+				elif hexcolor == ('#eb7800') or hexcolor == ('#c13614'):
+					print('Red number skipping - call')
 					nextTask = driver.find_element(By.XPATH, "//button[@class='caret-dropdown-button _1ylTesnUFCUoPnsDHUtF0P _22hSpbFmuiQ8R9QbO4ZqTX _1Ay9MEQX3iXqrw2cxxIbzo _1gXXlmROaFHLoEi6CKsXd6 _6HZaoxWJnRcfE95dytvs_ dropdown-button _10WN_uTvYhxSNagSvGB4n8']//i[@class='_3ExX8qM26_trEsvweUZWmM _3XP4tseTH1-F62Cg-zWwDx _1-DCZzScVz9s0VMOIYyDg2 _13bB5RjyTUrFyaxtvHghsD']")
 					nextTask.click()
 					try:
@@ -105,19 +110,97 @@ def autodialer(email, password, max_calls_hour):
 						rightarrow = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[1]/div/div/div/div[2]/div/div[1]/div[1]/div[1]/div[1]/button[2]/span/i')
 						rightarrow.click()
 						continue
-				else:
-					pass
+				
 			except NoSuchElementException:
 				pass
 
-			time.sleep(1)
-			driver.implicitly_wait(10)
+			time.sleep(.5)
+		
+
+		# skip corprate numbers ending in 000 & 00 & none US numbers and mark them as invalid
+			try:
+				phonenumber = driver.find_element(By.XPATH, '//*[@id="task-flow-log-call-form"]/div[3]/div/div/div/div/div/label/div[1]').text
+				print(phonenumber)
+				pattern = re.search(r'\S\d\s\d{3}-\d{3}-(\d\d[0][0])', phonenumber)
+				pattern2 = re.search(r'\S\d\s\d{3}-\d{3}-(\d[0][0][0])', phonenumber)
+				pattern3 = re.search(r'\S[1]\s\d{3}-\d{3}-\d{4}', phonenumber)
+				print(pattern, pattern2, pattern3)	
+
+				if pattern or pattern2:
+					# mark invalid, working on fix
+					print('Corprate number - skipping call')
+					print("Looking for dropdown")
+					invaliddropdown = driver.find_element(By.XPATH,'//*[@id="app"]/div/div[1]/div/div/div/div[1]/div/div/div[1]/div/div[2]/div/div[2]/div/ul/li[2]/div[2]/div/div/div/div/button')
+					invaliddropdown.click()
+					print('dropdown CLICKED')
+					time.sleep(4)
+					driver.implicitly_wait(5)
+					# invaliddropdown2 = Select(driver.find_element_by_xpath('/html/body/div[4]/div'))
+					
+					markNumber = driver.find_element(By.XPATH, "//a[contains(text(),'Mark Invalid')]")
+					markNumber.click()
+					print("marked invalid")
+					# invaliddropdown2.select_by_visible_text('Mark Invalid')
+					# driver.implicitly_wait(3)
+					# print('markinvalid')
+					# markinvalid.click()
+					# print('Marking - Invalid')
+
+					# THEN skip task
+					nextTask = driver.find_element(By.XPATH, "//button[@class='caret-dropdown-button _1ylTesnUFCUoPnsDHUtF0P _22hSpbFmuiQ8R9QbO4ZqTX _1Ay9MEQX3iXqrw2cxxIbzo _1gXXlmROaFHLoEi6CKsXd6 _6HZaoxWJnRcfE95dytvs_ dropdown-button _10WN_uTvYhxSNagSvGB4n8']//i[@class='_3ExX8qM26_trEsvweUZWmM _3XP4tseTH1-F62Cg-zWwDx _1-DCZzScVz9s0VMOIYyDg2 _13bB5RjyTUrFyaxtvHghsD']")
+					nextTask.click()
+					print('Skipped')
+					try:
+						skipStep = driver.find_element(By.XPATH, "//span[normalize-space()='Skip Step']")
+						skipStep.click()
+						continue						
+					except:
+						rightarrow = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[1]/div/div/div/div[2]/div/div[1]/div[1]/div[1]/div[1]/button[2]/span/i')
+						rightarrow.click()
+						continue
+				elif pattern3: # normal number
+					print('Normal Number!')
+					pass
+				elif (pattern is None) and (pattern2 is None) and (pattern3 is None): # area code NOT in USA
+					
+					# mark invalid
+					print("Looking for dropdown")
+					invaliddropdown = driver.find_element(By.XPATH,'//*[@id="task-flow-log-call-form"]/div[3]/div/div/div/div/div/label/div[2]/div/div/div')
+					invaliddropdown.click()
+					invaliddropdown.click()
+
+					time.sleep(1)
+					implicitly_wait(1)
+					print('Looking for invalid')
+					markinvalid = driver.find_element(By.XPATH, '/html/body/div[4]/div/div/a[3]')
+					markinvalid.click()
+					print('Marking - Invalid')
+
+					# then skip task
+					nextTask = driver.find_element(By.XPATH, "//button[@class='caret-dropdown-button _1ylTesnUFCUoPnsDHUtF0P _22hSpbFmuiQ8R9QbO4ZqTX _1Ay9MEQX3iXqrw2cxxIbzo _1gXXlmROaFHLoEi6CKsXd6 _6HZaoxWJnRcfE95dytvs_ dropdown-button _10WN_uTvYhxSNagSvGB4n8']//i[@class='_3ExX8qM26_trEsvweUZWmM _3XP4tseTH1-F62Cg-zWwDx _1-DCZzScVz9s0VMOIYyDg2 _13bB5RjyTUrFyaxtvHghsD']")
+					nextTask.click()
+					print('Not US number - skipping call')
+					try:
+						skipStep = driver.find_element(By.XPATH, "//span[normalize-space()='Skip Step']")
+						skipStep.click()
+						continue						
+					except:
+						rightarrow = driver.find_element(By.XPATH, '//*[@id="app"]/div/div[1]/div/div/div/div[2]/div/div[1]/div[1]/div[1]/div[1]/button[2]/span/i')
+						rightarrow.click()
+						continue
+			except:
+				
+				print('Pattern Error')
+				pass
 		#check if a number exists, if not skip the task
+
 			try:
 			
-				print('Calling prospect')
 				callButton = driver.find_element(By.XPATH, "//i[@class='_3IgMsURK-3b6bjwARPmD2_ _3XP4tseTH1-F62Cg-zWwDx Z8ma2hjVe2tPmJQ3Ppmmi _13bB5RjyTUrFyaxtvHghsD']")
 				callButton.click()
+				print('Calling prospect')
+
+				
 
 			except NoSuchElementException:	
 				s = s + 1
@@ -134,8 +217,7 @@ def autodialer(email, password, max_calls_hour):
 				continue
 
 
-			time.sleep(15) #HK increased from 2-> 10 because calls were being cancelled
-			driver.implicitly_wait(20) # HK added implicit wait
+			driver.implicitly_wait(5)
 
 			print('Switching to iFrame')
 			#iframe switch for modal popup:
@@ -148,11 +230,14 @@ def autodialer(email, password, max_calls_hour):
 				callAnyway.click()
 				badNum = True
 
-				time.sleep(6) #HK increased from 2-> 6 because calls were being cancelled
+				time.sleep(3) #HK increased from 2-> 6 because calls were being cancelled
 			except: 
 				print('No bad number, passing')
 				pass
-
+			
+		
+			time.sleep(20)
+			
 			try:
 				print('Trying to hang up on prospect')
 				endCallButton = driver.find_element(By.XPATH, "//button[@aria-label='Hangup']")
@@ -196,15 +281,17 @@ def autodialer(email, password, max_calls_hour):
 				
 				# double call will not select disposition, so only one call will actually be logged, working on a fix 
 				print('Calling Again')
+				time.sleep(1)
 				secondtry = driver.find_element(By.XPATH, "//*[@id='app']/div/div[1]/div/div/div/div[1]/div/div/div[1]/div/div[2]/div/div[2]/div/ul/li[2]/div[2]/a")
 				secondtry.click()
+				
+				time.sleep(22)
 				driver.implicitly_wait(20)
 
 				print('switching to iframe')
 				dialerFrame2 = driver.find_element(By.XPATH, "//iframe[contains(@title,'Outreach dialer')]")
 				driver.switch_to.frame(dialerFrame2)
-				time.sleep(15)
-
+				
 				try:
 					print("Trying to hang up")
 					endcall = driver.find_element(By.XPATH, "//*[@id='dialerBody']/div[2]/div[2]/div/div/div[2]/div/button/span[1]")
